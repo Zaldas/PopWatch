@@ -1,6 +1,6 @@
 addon.name    = 'Popwatch'
 addon.author  = 'zaldas'
-addon.version = '0.1'
+addon.version = '0.2'
 addon.desc    = 'Spawn window countdown announcer and alliance roster'
 
 require('common')
