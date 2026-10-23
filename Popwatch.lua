@@ -61,12 +61,13 @@ local function startTimer(name, target, windowCount, window)
 end
 
 local function cancelTimer()
-    if countdown.get() == nil then
+    local timer = countdown.get()
+    if timer == nil then
         notifyError('No timer running.')
         return
     end
+    send(string.format('--- %s --- Canceling timer', timer.name))
     countdown.cancel()
-    notify('Timer cancelled.')
 end
 
 local function printUsage()
