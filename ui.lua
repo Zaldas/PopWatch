@@ -32,6 +32,19 @@ local HELP_NEW = 'Announces at 5m, 3m, 2m, 1m, 30s and 10s before the window, '
 local HELP_RUNNING = 'Green: sent. White: pending. Grey: skipped, already passed at start. '
     .. 'Red: dropped, due while zoning.'
 
+local NAME_HELP = { string.format('ASCII, max %d, no < >', countdown.NAME_MAX) }
+local TIME_HELP = {
+    'HH:MM:SS  your local time, 24h',
+    'MM:SS     next time the clock shows it',
+    'A passed HH:MM:SS rolls to tomorrow.',
+}
+local WINDOWS_HELP = { '1 window, or 7 windows 10 min apart.' }
+local CURRENT_WINDOW_HELP = { 'The window the entered time belongs to.' }
+local CHANNEL_HELP = { 'Echo shows messages only to you.' }
+
+-- Combo item strings for the current-window selector, keyed by window count.
+local windowLists = {}
+
 function M.toggle()
     open[1] = not open[1]
 end
@@ -47,11 +60,13 @@ end
 local function drawClockLine()
     local now = math.floor(clock.now())
     local pcOffset = clock.pcOffset()
+    imgui.PushTextWrapPos(0)
     if pcOffset == nil then
         imgui.TextDisabled(string.format('PC clock %s (server not synced)', os.date('%H:%M:%S', now)))
     else
         imgui.TextDisabled(string.format('Server clock %s  (PC %+.1fs)', os.date('%H:%M:%S', now), pcOffset))
     end
+    imgui.PopTextWrapPos()
 end
 
 local function drawSeparator()
@@ -62,13 +77,28 @@ end
 
 -- An error replaces the field's help lines.
 local function drawFieldHelp(err, lines)
+    imgui.PushTextWrapPos(0)
     if err ~= nil then
         imgui.TextColored(ERROR_COLOR, err)
-        return
+    else
+        for _, line in ipairs(lines) do
+            imgui.TextDisabled(line)
+        end
     end
-    for _, line in ipairs(lines) do
-        imgui.TextDisabled(line)
+    imgui.PopTextWrapPos()
+end
+
+local function windowList(count)
+    local list = windowLists[count]
+    if list == nil then
+        local windows = {}
+        for i = 1, count do
+            windows[i] = tostring(i)
+        end
+        list = table.concat(windows, '\0') .. '\0'
+        windowLists[count] = list
     end
+    return list
 end
 
 local function drawNewTimer(ctx)
@@ -78,39 +108,29 @@ local function drawNewTimer(ctx)
     imgui.SetNextItemWidth(uiTheme.comboWidth())
     imgui.InputText('Name##name', nameBuf, countdown.NAME_MAX + 1)
     local name, nameErr = countdown.validateName(nameBuf[1])
-    drawFieldHelp(nameBuf[1] ~= '' and nameErr or nil, {
-        string.format('ASCII, max %d, no < >', countdown.NAME_MAX),
-    })
+    drawFieldHelp(nameBuf[1] ~= '' and nameErr or nil, NAME_HELP)
     drawSeparator()
 
     imgui.SetNextItemWidth(uiTheme.comboWidth())
     imgui.InputText('Time##time', timeBuf, 9)
     local target, timeErr = countdown.parseTime(timeBuf[1], clock.now())
-    drawFieldHelp(timeBuf[1] ~= '' and timeErr or nil, {
-        'HH:MM:SS  your local time, 24h',
-        'MM:SS     next time the clock shows it',
-        'A passed HH:MM:SS rolls to tomorrow.',
-    })
+    drawFieldHelp(timeBuf[1] ~= '' and timeErr or nil, TIME_HELP)
     drawSeparator()
 
     imgui.SetNextItemWidth(uiTheme.comboWidth())
     imgui.Combo('Windows##windows', windowCountIdx, WINDOW_COUNT_LIST)
     local windowCount = countdown.WINDOW_COUNTS[windowCountIdx[1] + 1]
-    drawFieldHelp(nil, { '1 window, or 7 windows 10 min apart.' })
+    drawFieldHelp(nil, WINDOWS_HELP)
     if windowCount > 1 then
         drawSeparator()
-        local windows = {}
-        for i = 1, windowCount do
-            windows[i] = tostring(i)
-        end
         imgui.SetNextItemWidth(uiTheme.comboWidth())
-        imgui.Combo('Current window##current', currentWindowIdx, table.concat(windows, '\0') .. '\0')
-        drawFieldHelp(nil, { 'The window the entered time belongs to.' })
+        imgui.Combo('Current window##current', currentWindowIdx, windowList(windowCount))
+        drawFieldHelp(nil, CURRENT_WINDOW_HELP)
     end
     drawSeparator()
 
     drawChannelCombo(ctx)
-    drawFieldHelp(nil, { 'Echo shows messages only to you.' })
+    drawFieldHelp(nil, CHANNEL_HELP)
     drawSeparator()
 
     drawClockLine()
@@ -144,9 +164,9 @@ local function drawRunning(ctx, timer)
     imgui.Indent(uiTheme.indent)
 
     local remaining = formatRemaining(timer.target - clock.now())
-    local pushed = pcall(imgui.PushFont, imgui.GetFont(), imgui.GetFontSize() * 2)
+    imgui.PushFont(imgui.GetFont(), imgui.GetFontSize() * 2)
     imgui.Text(remaining)
-    if pushed then imgui.PopFont() end
+    imgui.PopFont()
 
     if timer.windowCount > 1 then
         imgui.TextColored(uiTheme.accent, string.format('Window %d/%d', timer.window, timer.windowCount))
@@ -158,7 +178,7 @@ local function drawRunning(ctx, timer)
 
     imgui.TextColored(STATUS_COLORS.sent, 'Timer')
     for _, cp in ipairs(timer.checkpoints) do
-        if cp.label ~= '30s' then imgui.SameLine() end
+        if not cp.newRow then imgui.SameLine() end
         imgui.TextColored(STATUS_COLORS[cp.status], cp.label)
     end
     imgui.Spacing()
@@ -247,7 +267,7 @@ function M.draw(ctx)
     local n = uiTheme.push()
     imgui.SetNextWindowSizeConstraints({ 300, 0 }, { 300, 9999 })
     local ok, err = true, nil
-    if imgui.Begin(ctx.windowTitle .. '###Popwatch', open, ImGuiWindowFlags_AlwaysAutoResize) then
+    if imgui.Begin(ctx.windowTitle() .. '###Popwatch', open, ImGuiWindowFlags_AlwaysAutoResize) then
         ok, err = pcall(drawBody, ctx)
     end
     imgui.End()

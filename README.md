@@ -19,8 +19,8 @@ alliance, ready for a DKP screenshot or a paste into Discord.
   window open, and 20 sec after
 - **Single or 7-window timers.** 7-window timers run windows 10 minutes apart, and you can
   start from any window
-- **Timezone-friendly messages.** The hour is shown as `xx`, so players in other timezones
-  read the minutes and seconds directly
+- **Timezone-friendly messages.** The hour is shown as `xx` and the minutes and seconds come
+  from UTC, so every timezone, including :30 and :45 offsets, reads the same time
 - **Announce or stay silent.** Post to Party, LS1 or LS2, or Echo the messages only to yourself
 - **Alliance roster.** Party-by-party member list with one-click copy as a Discord code block
 
@@ -53,6 +53,8 @@ Messages look like this:
 --- Fafnir --- Window Done (xx:42:35)
 ```
 
+Cancelling a running timer posts `--- Fafnir --- Canceling timer`.
+
 On a 7-window timer, the message 20 sec after each window announces the next one, e.g.
 `Next Window [3/7] (xx:52:15)`, and the timer moves on to that window.
 
@@ -62,6 +64,9 @@ running view colours each checkpoint: green sent, white pending, grey skipped, r
 
 If several people run Popwatch for the same window, all but one should set their channel to
 **Echo** to avoid duplicate posts.
+
+The timer does not survive `/addon reload`, logout or a crash, and the channel resets to
+**Echo** on load.
 
 ## Alliance tab
 
@@ -87,7 +92,7 @@ Lists every party in the alliance in in-game order, under the current or most re
 |---------|--------|
 | `/popwatch` or `/pw` | Toggle the window |
 | `/pw <HH:MM:SS\|MM:SS> <name>` | Start a single-window timer on the selected channel |
-| `/pw cancel` | Cancel the timer |
+| `/pw cancel` | Cancel the timer and post `--- <name> --- Canceling timer` to the selected channel |
 | `/pw help` | List commands in chat |
 
 ## Timing

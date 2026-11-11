@@ -16,7 +16,7 @@ local CHECKPOINTS = {
     { offset = -180, label = '3m',     text = '3 min' },
     { offset = -120, label = '2m',     text = '2 min' },
     { offset = -60,  label = '1m',     text = '1 min' },
-    { offset = -30,  label = '30s',    text = '30 sec' },
+    { offset = -30,  label = '30s',    text = '30 sec', newRow = true },
     { offset = -10,  label = '10s',    text = '10 sec' },
     { offset = 0,    label = 'Open',   text = 'NOW / Window Open' },
     { offset = M.WINDOW_SECONDS, label = 'Done' },
@@ -29,9 +29,9 @@ local function trim(s)
     return (s:gsub('^%s+', ''):gsub('%s+$', ''))
 end
 
--- The hour is masked: it differs between timezones, minutes and seconds do not.
+-- The hour is masked and minutes/seconds come from UTC, so every timezone, including :30 and :45 offsets, agrees.
 function M.formatXX(epoch)
-    return os.date('xx:%M:%S', math.floor(epoch))
+    return os.date('!xx:%M:%S', math.floor(epoch))
 end
 
 -- HH:MM:SS is local 24h time, rolling to tomorrow once passed.
@@ -113,6 +113,7 @@ local function buildCheckpoints(now, isFirst)
                 label  = (cp.offset > 0 and hasNext) and 'Next' or cp.label,
                 text   = cp.text,
                 offset = cp.offset,
+                newRow = cp.newRow,
                 due    = due,
                 status = (due <= now) and 'skipped' or 'pending',
             }
@@ -162,9 +163,9 @@ local function message(cp)
     return string.format('--- %s --- %s (%s)', active.name, cp.text, M.formatXX(active.target))
 end
 
--- Sends due checkpoints through send(msg). Returns true when the timer finished this tick.
+-- Sends due checkpoints through send(msg).
 function M.tick(now, canSend, send)
-    if active == nil then return false end
+    if active == nil then return end
     for _, cp in ipairs(active.checkpoints) do
         if cp.status == 'pending' and cp.due <= now then
             if now - cp.due > LATE_LIMIT then
@@ -181,12 +182,10 @@ function M.tick(now, canSend, send)
             active.window = active.window + 1
             active.target = active.target + M.WINDOW_INTERVAL
             buildCheckpoints(now, false)
-            return false
+            return
         end
         active = nil
-        return true
     end
-    return false
 end
 
 return M

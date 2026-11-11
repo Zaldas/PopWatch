@@ -2,6 +2,7 @@ addon.name    = 'Popwatch'
 addon.author  = 'zaldas'
 addon.version = '0.2'
 addon.desc    = 'Spawn window countdown announcer and alliance roster'
+addon.link    = 'https://github.com/Zaldas/PopWatch'
 
 require('common')
 local chat      = require('chat')
@@ -78,6 +79,9 @@ end
 
 local ctx = {
     channelList = table.concat(channelLabels, '\0') .. '\0',
+    windowTitle = function()
+        return string.format('%s.%s%s', addon.name, addon.version, timerSuffix(countdown.get()))
+    end,
     onChannel   = setChannel,
     onStart     = startTimer,
     onCancel    = cancelTimer,
@@ -148,9 +152,10 @@ end)
 
 ashita.events.register('d3d_present', 'popwatch_present_cb', function()
     clock.update()
-    countdown.tick(clock.now(), canSend(), send)
+    if countdown.get() ~= nil then
+        countdown.tick(clock.now(), canSend(), send)
+    end
 
-    ctx.windowTitle  = string.format('%s.%s%s', addon.name, addon.version, timerSuffix(countdown.get()))
     ctx.channelIndex = channelIndex
     ui.draw(ctx)
 end)
