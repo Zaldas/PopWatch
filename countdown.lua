@@ -29,7 +29,8 @@ local function trim(s)
     return (s:gsub('^%s+', ''):gsub('%s+$', ''))
 end
 
--- The hour is masked and minutes/seconds come from UTC, so every timezone, including :30 and :45 offsets, agrees.
+-- The hour is masked and minutes/seconds come from UTC, so announcers in every timezone post the same minutes.
+-- Input (parseTime) is local; in a :30/:45 offset zone typed and posted minutes differ by that offset.
 function M.formatXX(epoch)
     return os.date('!xx:%M:%S', math.floor(epoch))
 end

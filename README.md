@@ -20,7 +20,8 @@ alliance, ready for a DKP screenshot or a paste into Discord.
 - **Single or 7-window timers.** 7-window timers run windows 10 minutes apart, and you can
   start from any window
 - **Timezone-friendly messages.** The hour is shown as `xx` and the minutes and seconds come
-  from UTC, so every timezone, including :30 and :45 offsets, reads the same time
+  from UTC, so every announcer posts the same minutes. Times you type and the clock line use
+  your local time; in a :30 or :45 offset timezone they differ from the posted minutes by that offset
 - **Announce or stay silent.** Post to Party, LS1 or LS2, or Echo the messages only to yourself
 - **Alliance roster.** Party-by-party member list with one-click copy as a Discord code block
 
